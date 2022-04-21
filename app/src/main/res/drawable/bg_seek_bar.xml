@@ -1,0 +1,38 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:height="4dp"
+        android:gravity="center_vertical">
+
+        <shape>
+            <corners android:radius="@dimen/corner_radius_normal" />
+            <solid android:color="@color/seekbar_track_color" />
+        </shape>
+    </item>
+
+    <item
+        android:id="@android:id/secondaryProgress"
+        android:height="4dp"
+        android:gravity="center_vertical">
+
+        <scale android:scaleWidth="100%">
+            <shape>
+                <solid android:color="@color/seekbar_buffer_color" />
+                <corners android:radius="@dimen/corner_radius_normal" />
+            </shape>
+        </scale>
+    </item>
+
+    <item
+        android:id="@android:id/progress"
+        android:height="4dp"
+        android:gravity="center_vertical">
+
+        <scale android:scaleWidth="100%">
+            <shape>
+                <solid android:color="@color/primary_red_color" />
+                <corners android:radius="@dimen/corner_radius_normal" />
+            </shape>
+        </scale>
+    </item>
+
+</layer-list>

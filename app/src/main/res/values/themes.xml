@@ -1,0 +1,22 @@
+<resources>
+    <!-- Base application theme. -->
+    <style name="Theme.LiveToVod" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <!-- Primary brand color. -->
+        <item name="colorPrimary">@color/primary_bg_color</item>
+        <item name="colorPrimaryVariant">@color/primary_bg_color</item>
+        <item name="colorOnPrimary">@color/primary_bg_color</item>
+        <item name="colorSecondary">@color/primary_bg_dark_color</item>
+        <item name="colorSecondaryVariant">@color/primary_bg_dark_color</item>
+        <item name="colorOnSecondary">@color/primary_bg_dark_color</item>
+        <item name="android:statusBarColor">@color/primary_bg_dark_color</item>
+        <item name="android:windowBackground">@color/primary_bg_dark_color</item>
+        <item name="android:navigationBarColor">@color/primary_bg_dark_color</item>
+    </style>
+
+    <style name="ProgressBar" parent="Theme.LiveToVod">
+        <item name="android:layout_gravity">center</item>
+        <item name="android:indeterminate">true</item>
+        <item name="android:scaleType">center</item>
+        <item name="android:indeterminateDrawable">@drawable/bg_buffering</item>
+    </style>
+</resources>

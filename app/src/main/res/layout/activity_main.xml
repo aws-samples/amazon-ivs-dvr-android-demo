@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <import type="android.view.View" />
+
+        <variable
+            name="isLive"
+            type="Boolean"
+            android:value="true" />
+
+        <variable
+            name="isPlayButtonVisible"
+            type="Boolean"
+            android:value="true" />
+
+        <variable
+            name="isVodInitialized"
+            type="Boolean"
+            android:value="false" />
+
+        <variable
+            name="isDragging"
+            type="Boolean"
+            android:value="false" />
+
+        <variable
+            name="vodProgress"
+            type="Integer"
+            android:value="100" />
+
+        <variable
+            name="isStreamPaused"
+            type="Boolean"
+            android:value="false" />
+
+        <variable
+            name="isLandscape"
+            type="Boolean"
+            android:value="false" />
+
+    </data>
+
+    <FrameLayout
+        android:id="@+id/stream_holder"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <FrameLayout
+            android:id="@+id/stream_live_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="@{isLive ? View.VISIBLE : View.GONE, default = visible}">
+
+            <TextureView
+                android:id="@+id/stream_live"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center" />
+
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/stream_vod_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="@{isLive &amp;&amp; isVodInitialized ? View.GONE : View.VISIBLE, default = visible}">
+
+            <TextureView
+                android:id="@+id/stream_vod"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center" />
+
+        </FrameLayout>
+
+        <ProgressBar
+            android:id="@+id/stream_buffering"
+            style="@style/ProgressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/player_controls"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:background="@drawable/bg_controls">
+
+            <LinearLayout
+                android:id="@+id/back_to_live"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end|bottom"
+                android:alpha="100"
+                android:background="@drawable/bg_back_to_live"
+                android:gravity="bottom|end"
+                android:orientation="horizontal"
+                android:paddingHorizontal="@dimen/padding_small"
+                android:paddingVertical="@dimen/padding_small"
+                app:layout_constraintBottom_toTopOf="@id/vod_time_wrapper"
+                app:layout_constraintEnd_toEndOf="@id/stream_seek"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:contentDescription="@string/live_icon"
+                    android:src="@drawable/ic_live" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/margin_tiny"
+                    android:textStyle="bold"
+                    android:text="@string/back_to_live"
+                    android:textColor="@color/text_color"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+
+            <FrameLayout
+                android:id="@+id/vod_time_wrapper"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/margin_medium"
+                android:layout_marginBottom="@dimen/margin_medium"
+                android:visibility="@{(!isStreamPaused &amp;&amp; !isLive) || isDragging ? View.VISIBLE : View.INVISIBLE}"
+                app:layout_constraintBottom_toTopOf="@id/stream_seek"
+                app:layout_constraintTop_toBottomOf="@id/back_to_live">
+
+                <TextView
+                    android:id="@+id/vod_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:paddingHorizontal="@dimen/padding_small"
+                    android:textColor="@color/text_color" />
+
+            </FrameLayout>
+
+            <SeekBar
+                android:id="@+id/stream_seek"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/seekbar_height"
+                android:layout_gravity="center_vertical"
+                android:layout_marginHorizontal="@dimen/margin_normal"
+                android:indeterminate="false"
+                android:max="@integer/seekbar_max_progress"
+                android:paddingStart="@dimen/padding_small"
+                android:paddingEnd="@dimen/padding_small"
+                android:progress="@{vodProgress}"
+                android:progressDrawable="@drawable/bg_seek_bar"
+                android:thumb="@drawable/bg_thumb"
+                app:layout_constraintBottom_toTopOf="@id/seek_and_pause_wrapper"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/vod_time_wrapper"
+                tools:progress="60" />
+
+            <LinearLayout
+                android:id="@+id/seek_and_pause_wrapper"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/margin_normal"
+                android:layout_marginBottom="@dimen/margin_huge"
+                android:orientation="horizontal"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/stream_seek">
+
+                <ImageView
+                    android:id="@+id/backward_button"
+                    android:layout_width="@dimen/forward_backward_button_size"
+                    android:layout_height="@dimen/forward_backward_button_size"
+                    android:background="@drawable/bg_ripple"
+                    android:contentDescription="@string/backward_quick_seek"
+                    android:padding="@dimen/forward_backward_button_padding"
+                    android:src="@drawable/ic_backward" />
+
+                <FrameLayout
+                    android:id="@+id/play_pause_button"
+                    android:layout_width="@dimen/play_pause_button_size"
+                    android:layout_height="@dimen/play_pause_button_size"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginEnd="@dimen/margin_huge"
+                    android:layout_marginStart="@dimen/margin_huge"
+                    android:background="@{isLandscape ? @drawable/bg_ripple : @drawable/bg_play_pause}"
+                    android:contentDescription="@null"
+                    android:padding="@dimen/padding_small"
+                    tools:background="@drawable/bg_play_pause">
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@{isPlayButtonVisible ? @drawable/ic_play : @drawable/ic_pause}"
+                        tools:background="@drawable/ic_pause" />
+
+                </FrameLayout>
+
+                <ImageView
+                    android:id="@+id/forward_button"
+                    android:layout_width="@dimen/forward_backward_button_size"
+                    android:layout_height="@dimen/forward_backward_button_size"
+                    android:background="@drawable/bg_ripple"
+                    android:contentDescription="@string/forward_quick_seek"
+                    android:enabled="@{isLive ? false : true}"
+                    android:padding="@dimen/forward_backward_button_padding"
+                    android:src="@drawable/ic_forward_state_list" />
+
+            </LinearLayout>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end|top"
+            android:layout_marginTop="@dimen/margin_normal"
+            android:layout_marginEnd="@dimen/margin_normal"
+            android:background="@drawable/bg_vod_pill"
+            android:orientation="horizontal"
+            android:paddingHorizontal="@dimen/padding_small"
+            android:paddingVertical="@dimen/padding_tiny"
+            android:visibility="@{!isLive &amp;&amp; !isStreamPaused ? View.VISIBLE : View.GONE}">
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:contentDescription="@string/vod_icon"
+                android:src="@drawable/ic_vod" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/margin_tiny"
+                android:text="@string/recorded"
+                android:textStyle="bold"
+                android:textAllCaps="true"
+                android:textColor="@color/vod_status_text_color"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end|top"
+            android:layout_marginTop="@dimen/margin_normal"
+            android:layout_marginEnd="@dimen/margin_normal"
+            android:background="@drawable/bg_live_pill"
+            android:orientation="horizontal"
+            android:paddingHorizontal="@dimen/padding_small"
+            android:paddingVertical="@dimen/padding_tiny"
+            android:visibility="@{isLive &amp;&amp; !isStreamPaused ? View.VISIBLE : View.GONE}"
+            tools:visibility="gone">
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:contentDescription="@string/live_icon"
+                android:src="@drawable/ic_live" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/margin_tiny"
+                android:textStyle="bold"
+                android:text="@string/live"
+                android:textAllCaps="true"
+                android:textColor="#FFF"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+</layout>

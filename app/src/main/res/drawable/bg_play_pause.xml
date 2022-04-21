@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ripple android:color="@color/button_accent_color"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#33FFFFFF" />
+            <size
+                android:height="@dimen/play_pause_button_size"
+                android:width="@dimen/play_pause_button_size" />
+        </shape>
+    </item>
+</ripple>

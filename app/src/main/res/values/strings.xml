@@ -1,0 +1,11 @@
+<resources>
+  <string name="app_name">LiveToVod</string>
+  <string name="back_to_live">Back to live</string>
+  <string name="backward_quick_seek">Backward quick seek</string>
+  <string name="forward_quick_seek">Forward quick seek</string>
+  <string name="clock_template">-%1$s</string>
+  <string name="live">Live</string>
+  <string name="live_icon">Live icon</string>
+  <string name="recorded">recorded</string>
+  <string name="vod_icon">VOD icon</string>
+</resources>

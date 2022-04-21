@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary_bg_color">#1B1B1B</color>
+    <color name="primary_bg_dark_color">#080404</color>
+    <color name="vod_status_text_color">#000</color>
+    <color name="button_accent_color">#e1e1e1</color>
+    <color name="primary_red_color">#FF0000</color>
+    <color name="text_color">#FFF</color>
+    <color name="forward_backward_button_color">#FFF</color>
+    <color name="seekbar_thumb_color">#FFF</color>
+    <color name="pill_live">#FF0000</color>
+    <color name="pill_vod">#FFE76A</color>
+    <color name="ic_launcher_background">#21242A</color>
+
+    <color name="buffering_color_end">#CDCDCD</color>
+    <color name="buffering_color_center">#E6E6E6</color>
+    <color name="buffering_color_start">#00FFFFFF</color>
+
+    <color name="seekbar_track_color">#4DFFFFFF</color>
+    <color name="seekbar_buffer_color">#80FFFFFF</color>
+
+    <color name="controls_gradient_start">#000000</color>
+    <color name="controls_gradient_end">#00000000</color>
+    <color name="back_to_live_background_color">#B3000000</color>
+
+</resources>
