@@ -29,7 +29,7 @@ fun View.animateVisibility(isVisible: Boolean) {
     alpha = if (isVisible) ALPHA_GONE else ALPHA_VISIBLE
     animate().setDuration(250L).alpha(if (isVisible) ALPHA_VISIBLE else ALPHA_GONE)
         .setListener(object : AnimatorListenerAdapter() {
-            override fun onAnimationEnd(animation: Animator?) {
+            override fun onAnimationEnd(animation: Animator) {
                 super.onAnimationEnd(animation)
                 setVisible(isVisible, View.INVISIBLE)
             }
