@@ -2,24 +2,16 @@ package com.amazon.ivs.livetovod.common
 
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import timber.log.Timber
-
-private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-
-@Suppress("FunctionName")
-fun <T> ConsumableSharedFlow(canReplay: Boolean = false) = MutableSharedFlow<T>(
-    replay = if (canReplay) 1 else 0,
-    extraBufferCapacity = 1,
-    onBufferOverflow = BufferOverflow.DROP_OLDEST
-)
 
 fun AppCompatActivity.launchUI(
     lifecycleState: Lifecycle.State = Lifecycle.State.STARTED,
@@ -32,7 +24,20 @@ fun AppCompatActivity.launchUI(
     repeatOnLifecycle(state = lifecycleState, block = block)
 }
 
-fun launchIO(block: suspend CoroutineScope.() -> Unit) = ioScope.launch(
+fun <T> AppCompatActivity.collect(
+    flow: Flow<T>,
+    lifecycleState: Lifecycle.State = Lifecycle.State.STARTED,
+    collect: suspend (T) -> Unit
+) {
+    launchUI(lifecycleState) {
+        flow.collect(collect)
+    }
+}
+
+fun ViewModel.launch(block: suspend CoroutineScope.() -> Unit) = viewModelScope.launch(
+    context = CoroutineExceptionHandler { _, e ->
+        Timber.e(e, "Coroutine failed: ${e.localizedMessage}")
+    },
     block = block
 )
 

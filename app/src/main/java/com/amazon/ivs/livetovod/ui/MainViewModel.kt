@@ -5,30 +5,37 @@ import android.view.Surface
 import android.view.TextureView
 import androidx.lifecycle.ViewModel
 import com.amazon.ivs.livetovod.BuildConfig
-import com.amazon.ivs.livetovod.common.ConsumableSharedFlow
 import com.amazon.ivs.livetovod.common.countDownTimer
-import com.amazon.ivs.livetovod.common.launchIO
+import com.amazon.ivs.livetovod.common.launch
 import com.amazon.ivs.livetovod.common.setListener
 import com.amazon.ivs.livetovod.models.ErrorModel
 import com.amazon.ivs.livetovod.models.ProgressUpdate
 import com.amazon.ivs.livetovod.models.SizeModel
 import com.amazon.ivs.livetovod.repository.Repository
-import com.amazon.ivs.livetovod.repository.networking.NetworkClient
 import com.amazon.ivs.livetovod.repository.networking.models.MetadataResponse
 import com.amazon.ivs.livetovod.repository.networking.models.RequestStatus
 import com.amazonaws.ivs.player.MediaPlayer
 import com.amazonaws.ivs.player.Player
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import timber.log.Timber
-import java.util.*
+import java.util.Date
+import javax.inject.Inject
 
 private const val BUFFER_TICK_DELAY_SIZE = 700L
 private const val PAUSE_PLAY_INTERVAL = 30 * 1000L
 private const val PROGRESS_UPDATE_DELAY = 1000L
 
-class MainViewModel : ViewModel() {
+@HiltViewModel
+class MainViewModel @Inject constructor(private val repository: Repository) : ViewModel() {
 
     private var rawIsStreamPaused = false
     private var shouldSeekToDelay = false
@@ -39,16 +46,18 @@ class MainViewModel : ViewModel() {
     private var vodPlayerListener: Player.Listener? = null
     private var _isLive = true
 
-    private val _onLiveStreamSizeChanged = ConsumableSharedFlow<SizeModel>(canReplay = true)
-    private val _onVodStreamSizeChanged = ConsumableSharedFlow<SizeModel>(canReplay = true)
-    private val _onStreamLoading = ConsumableSharedFlow<Boolean>()
-    private val _onError = ConsumableSharedFlow<ErrorModel>()
-    private val _onLiveStateChanged = ConsumableSharedFlow<Boolean>()
-    private val _onProgressChanged = ConsumableSharedFlow<ProgressUpdate>()
-    private val _onBufferedPositionChanged = ConsumableSharedFlow<Int>()
-    private val _isStreamPaused = ConsumableSharedFlow<Boolean>()
+    private val _onLiveStreamSizeChanged = MutableStateFlow(SizeModel(0, 0))
+    private val _onVodStreamSizeChanged = MutableStateFlow(SizeModel(0, 0))
     private val _onVodPlayerReady = MutableStateFlow(false)
-    private val repository = Repository(NetworkClient())
+    private val _onProgressChanged = MutableSharedFlow<ProgressUpdate>(
+        replay = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+    private val _onStreamLoading = Channel<Boolean>()
+    private val _onError = Channel<ErrorModel>()
+    private val _onLiveStateChanged = Channel<Boolean>()
+    private val _onBufferedPositionChanged = Channel<Int>()
+    private val _isStreamPaused = Channel<Boolean>()
     private val playPauseTimer = countDownTimer(
         PAUSE_PLAY_INTERVAL, 1000,
         onFinish = {
@@ -57,24 +66,24 @@ class MainViewModel : ViewModel() {
         }
     )
 
-    val onError = _onError.asSharedFlow()
-    val onLiveStreamSizeChanged = _onLiveStreamSizeChanged.asSharedFlow()
-    val onLiveStreamLoading = _onStreamLoading.asSharedFlow()
-    val onVodStreamSizeChanged = _onVodStreamSizeChanged.asSharedFlow()
-    val onLiveStateChanged = _onLiveStateChanged.asSharedFlow()
+    val onLiveStreamSizeChanged = _onLiveStreamSizeChanged.asStateFlow()
+    val onVodStreamSizeChanged = _onVodStreamSizeChanged.asStateFlow()
+    val onVodPlayerReady = _onVodPlayerReady.asStateFlow()
     val onProgressChanged = _onProgressChanged.asSharedFlow()
-    val onBufferedPositionChanged = _onBufferedPositionChanged.asSharedFlow()
-    val isStreamPaused = _isStreamPaused.asSharedFlow()
-    val onVodPlayerReady = _onVodPlayerReady.asSharedFlow()
+    val onError = _onError.receiveAsFlow()
+    val onLiveStreamLoading = _onStreamLoading.receiveAsFlow()
+    val onLiveStateChanged = _onLiveStateChanged.receiveAsFlow()
+    val onBufferedPositionChanged = _onBufferedPositionChanged.receiveAsFlow()
+    val isStreamPaused = _isStreamPaused.receiveAsFlow()
     val isLive get() = _isLive
     val canShowBackToLive get() = !rawIsStreamPaused
 
-    fun getMetadata(liveTexture: TextureView, vodTexture: TextureView) = launchIO {
+    fun getMetadata(liveTexture: TextureView, vodTexture: TextureView) = launch {
         repository.getMetadata().collect { response ->
             when (response.status) {
                 RequestStatus.ERROR -> {
                     response.error?.run {
-                        _onError.tryEmit(ErrorModel(code, errorDescription))
+                        _onError.send(ErrorModel(code, errorDescription))
                     }
                 }
                 RequestStatus.SUCCESS -> {
@@ -91,10 +100,10 @@ class MainViewModel : ViewModel() {
         _isLive = switchToLive
         if (!_isLive) {
             livePlayer?.pause()
-            _onLiveStateChanged.tryEmit(false)
         } else {
             vodPlayer?.pause()
         }
+        _onLiveStateChanged.trySend(_isLive)
         if (!rawIsStreamPaused) play()
     }
 
@@ -141,7 +150,7 @@ class MainViewModel : ViewModel() {
             vodPlayer?.play()
         }
         rawIsStreamPaused = false
-        _isStreamPaused.tryEmit(rawIsStreamPaused)
+        _isStreamPaused.trySend(rawIsStreamPaused)
     }
 
     fun pause() {
@@ -152,7 +161,7 @@ class MainViewModel : ViewModel() {
             shouldSeekToDelay = true
         }
         rawIsStreamPaused = true
-        _isStreamPaused.tryEmit(rawIsStreamPaused)
+        _isStreamPaused.trySend(rawIsStreamPaused)
         livePlayer?.pause()
         vodPlayer?.pause()
     }
@@ -165,17 +174,17 @@ class MainViewModel : ViewModel() {
         if (livePlayer != null) {
             return
         }
-        _onStreamLoading.tryEmit(true)
+        _onStreamLoading.trySend(true)
         livePlayer = MediaPlayer(textureView.context)
         livePlayerListener = initPlayer(
             livePlayer!!,
             textureView,
             liveUrl,
             onSizeChanged = { size ->
-                _onLiveStreamSizeChanged.tryEmit(size)
+                _onLiveStreamSizeChanged.update { size }
             },
             onPlaying = {
-                _onLiveStateChanged.tryEmit(_isLive)
+                _onLiveStateChanged.trySend(_isLive)
             }
         )
         livePlayer?.play()
@@ -187,7 +196,7 @@ class MainViewModel : ViewModel() {
             vodPlayer?.setSurface(Surface(textureView.surfaceTexture))
             return
         }
-        _onStreamLoading.tryEmit(true)
+        _onStreamLoading.trySend(true)
 
         Timber.d("Initializing VOD player")
         vodPlayer = MediaPlayer(textureView.context)
@@ -196,25 +205,26 @@ class MainViewModel : ViewModel() {
             textureView,
             "${BuildConfig.STREAM_VOD_URL}/${masterKey}",
             onSizeChanged = { size ->
-                _onVodStreamSizeChanged.tryEmit(size)
+                _onVodStreamSizeChanged.update { size }
             },
             onReady = {
-                _onVodPlayerReady.tryEmit(true)
+                _onVodPlayerReady.update { true }
             }
         )
 
-        launchIO {
+        launch {
             while (vodPlayer != null) {
                 delay(BUFFER_TICK_DELAY_SIZE)
-                vodPlayer?.run {
-                    val bufferedPosition =
-                        bufferedPosition.toDouble() / duration.toDouble() * SEEKBAR_MAX_PROGRESS
-                    _onBufferedPositionChanged.tryEmit(bufferedPosition.toInt())
+                if (!isLive) {
+                    vodPlayer?.run {
+                        val bufferedPosition = bufferedPosition.toDouble() / duration.toDouble() * SEEKBAR_MAX_PROGRESS
+                        _onBufferedPositionChanged.trySend(bufferedPosition.toInt())
+                    }
                 }
             }
         }
 
-        launchIO {
+        launch {
             while (true) {
                 delay(PROGRESS_UPDATE_DELAY)
                 if (!isLive && !rawIsStreamPaused) {
@@ -252,11 +262,11 @@ class MainViewModel : ViewModel() {
                     Player.State.PLAYING -> onPlaying()
                     else -> { /* Ignored */ }
                 }
-                _onStreamLoading.tryEmit(state == Player.State.BUFFERING && livePlayer?.state != Player.State.PLAYING)
+                _onStreamLoading.trySend(state == Player.State.BUFFERING && livePlayer?.state != Player.State.PLAYING)
             },
             onError = { exception ->
                 Timber.d("Error happened: $exception")
-                _onError.tryEmit(ErrorModel(exception.code, exception.errorMessage))
+                _onError.trySend(ErrorModel(exception.code, exception.errorMessage))
             }
         )
         player.setSurface(Surface(textureView.surfaceTexture))

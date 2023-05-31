@@ -2,11 +2,13 @@ package com.amazon.ivs.livetovod.common
 
 import timber.log.Timber
 
+private const val TIMBER_TAG = "LiveToVod"
+
 /**
  * Makes logged out class names clickable in Logcat
  */
-class LineNumberDebugTree(private val tag: String) : Timber.DebugTree() {
+class LineNumberDebugTree : Timber.DebugTree() {
 
     override fun createStackElementTag(element: StackTraceElement) =
-        "$tag: (${element.fileName}:${element.lineNumber}) #${element.methodName} "
+        "$TIMBER_TAG: (${element.fileName}:${element.lineNumber}) #${element.methodName} "
 }
