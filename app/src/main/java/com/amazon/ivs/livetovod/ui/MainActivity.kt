@@ -7,20 +7,33 @@ import android.graphics.Color
 import android.os.Bundle
 import android.view.MotionEvent
 import android.widget.LinearLayout
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.doOnLayout
-import com.amazon.ivs.livetovod.App
 import com.amazon.ivs.livetovod.R
-import com.amazon.ivs.livetovod.common.*
+import com.amazon.ivs.livetovod.common.CONTROLS_COUNTDOWN_TIME
+import com.amazon.ivs.livetovod.common.animateVisibility
+import com.amazon.ivs.livetovod.common.clearAllAnchors
+import com.amazon.ivs.livetovod.common.collect
+import com.amazon.ivs.livetovod.common.countDownTimer
+import com.amazon.ivs.livetovod.common.onDrawn
+import com.amazon.ivs.livetovod.common.onProgress
+import com.amazon.ivs.livetovod.common.onReady
+import com.amazon.ivs.livetovod.common.scaleToFit
+import com.amazon.ivs.livetovod.common.setXIfNotOutOfBounds
+import com.amazon.ivs.livetovod.common.showSnackBar
+import com.amazon.ivs.livetovod.common.toFormattedTime
 import com.amazon.ivs.livetovod.databinding.ActivityMainBinding
 import com.amazon.ivs.livetovod.models.SeekInterval
+import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 import kotlin.properties.Delegates
 
 const val SEEKBAR_MAX_PROGRESS = 1000L
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
@@ -29,7 +42,7 @@ class MainActivity : AppCompatActivity() {
     private var seekbarWidth = 0
     private var seekbarTickPixels: Float = 0f
 
-    private val viewModel by lazyViewModel({ application as App }) { MainViewModel() }
+    private val viewModel by viewModels<MainViewModel>()
     private val seekbarPadding by lazy { resources.getDimension(R.dimen.padding_small) }
 
     private var isLiveInitialized = false
@@ -101,69 +114,63 @@ class MainActivity : AppCompatActivity() {
             goLive()
         }
 
-        launchUI {
-            viewModel.onLiveStreamLoading.collect { isLoading ->
-                binding.streamBuffering.animateVisibility(isLoading)
-            }
+        collect(viewModel.onLiveStreamLoading) { isLoading ->
+            binding.streamBuffering.animateVisibility(isLoading)
         }
-        launchUI {
-            viewModel.onLiveStreamSizeChanged.collect { size ->
-                binding.streamLive.scaleToFit(size)
-            }
+
+        collect(viewModel.onLiveStreamSizeChanged) { size ->
+            binding.streamLive.scaleToFit(size)
         }
-        launchUI {
-            viewModel.onVodStreamSizeChanged.collect { size ->
-                binding.streamVod.scaleToFit(size)
-            }
+
+        collect(viewModel.onVodStreamSizeChanged) { size ->
+            binding.streamVod.scaleToFit(size)
         }
-        launchUI {
-            viewModel.onError.collect { error ->
-                binding.streamHolder.showSnackBar(error.message)
-            }
+
+        collect(viewModel.onError) { error ->
+            binding.streamHolder.showSnackBar(error.message)
         }
-        launchUI {
-            viewModel.isStreamPaused.collect { isPaused ->
-                binding.streamSeek.progressTintList =
-                    ColorStateList.valueOf(
-                        if (isPaused) {
-                            Color.TRANSPARENT
-                        } else {
-                            ResourcesCompat.getColor(resources, R.color.primary_red_color, null)
-                        }
-                    )
-                binding.streamSeek.secondaryProgress = binding.streamSeek.progress
-                binding.isStreamPaused = isPaused
-                binding.isPlayButtonVisible = isPaused
-                binding.backToLive.animateVisibility(!isPaused && !viewModel.isLive)
-            }
-        }
-        launchUI {
-            viewModel.onLiveStateChanged.collect { isLive ->
-                binding.isLive = isLive
-            }
-        }
-        launchUI {
-            viewModel.onProgressChanged.collect { progressUpdate ->
-                if (allowThumbUpdate) {
-                    binding.vodProgress = progressUpdate.progress.toInt()
-                    progressUpdate.vodTime?.let { time ->
-                        binding.vodTime.text = getString(R.string.clock_template, time.toFormattedTime())
+
+        collect(viewModel.isStreamPaused) { isPaused ->
+            binding.streamSeek.progressTintList =
+                ColorStateList.valueOf(
+                    if (isPaused) {
+                        Color.TRANSPARENT
+                    } else {
+                        ResourcesCompat.getColor(resources, R.color.primary_red_color, null)
                     }
+                )
+            Timber.d("Progress is - ${binding.streamSeek.progress}")
+            binding.streamSeek.secondaryProgress = binding.streamSeek.progress
+            binding.isStreamPaused = isPaused
+            binding.isPlayButtonVisible = isPaused
+            binding.backToLive.animateVisibility(!isPaused && !viewModel.isLive)
+        }
+
+        collect(viewModel.onLiveStateChanged) { isLive ->
+            binding.isLive = isLive
+            if (isLive) {
+                binding.streamSeek.secondaryProgress = SEEKBAR_MAX_PROGRESS.toInt()
+            }
+        }
+
+        collect(viewModel.onProgressChanged) { progressUpdate ->
+            if (allowThumbUpdate) {
+                binding.vodProgress = progressUpdate.progress.toInt()
+                progressUpdate.vodTime?.let { time ->
+                    binding.vodTime.text = getString(R.string.clock_template, time.toFormattedTime())
                 }
             }
         }
-        launchUI {
-            viewModel.onBufferedPositionChanged.collect { bufferedPosition ->
-                binding.streamSeek.secondaryProgress = bufferedPosition
-            }
+
+        collect(viewModel.onBufferedPositionChanged) { bufferedPosition ->
+            binding.streamSeek.secondaryProgress = bufferedPosition
         }
-        launchUI {
-            viewModel.onVodPlayerReady.collect { isPlaying ->
-                Timber.d("Vod playing: $isPlaying")
-                binding.playPauseButton.isEnabled = isPlaying
-                binding.streamSeek.isEnabled = isPlaying
-                binding.backwardButton.isEnabled = isPlaying
-            }
+
+        collect(viewModel.onVodPlayerReady) { isPlaying ->
+            Timber.d("Vod playing: $isPlaying")
+            binding.playPauseButton.isEnabled = isPlaying
+            binding.streamSeek.isEnabled = isPlaying
+            binding.backwardButton.isEnabled = isPlaying
         }
     }
 
@@ -184,12 +191,8 @@ class MainActivity : AppCompatActivity() {
         binding.isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
         updatePlayerConstraints()
         binding.root.doOnLayout {
-            if (viewModel.onLiveStreamSizeChanged.replayCache.isNotEmpty()) {
-                binding.streamLive.scaleToFit(viewModel.onLiveStreamSizeChanged.replayCache[0])
-            }
-            if (viewModel.onVodStreamSizeChanged.replayCache.isNotEmpty()) {
-                binding.streamVod.scaleToFit(viewModel.onVodStreamSizeChanged.replayCache[0])
-            }
+            binding.streamLive.scaleToFit(viewModel.onLiveStreamSizeChanged.value)
+            binding.streamVod.scaleToFit(viewModel.onVodStreamSizeChanged.value)
         }
     }
 

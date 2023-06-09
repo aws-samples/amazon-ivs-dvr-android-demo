@@ -8,10 +8,13 @@ import com.amazon.ivs.livetovod.repository.networking.models.RequestError
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import timber.log.Timber
+import javax.inject.Inject
+import javax.inject.Singleton
 
 const val METADATA_REQUEST_DELAY = 5 * 1000L
 
-class Repository(private val networkClient: NetworkClient) {
+@Singleton
+class Repository @Inject constructor(private val networkClient: NetworkClient) {
 
     fun getMetadata(): Flow<Response> = flowIO {
         while (true) {
