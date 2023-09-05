@@ -150,7 +150,7 @@ class MainViewModel @Inject constructor(private val repository: Repository) : Vi
             vodPlayer?.play()
         }
         rawIsStreamPaused = false
-        _isStreamPaused.trySend(rawIsStreamPaused)
+        _isStreamPaused.trySend(false)
     }
 
     fun pause() {
@@ -161,7 +161,7 @@ class MainViewModel @Inject constructor(private val repository: Repository) : Vi
             shouldSeekToDelay = true
         }
         rawIsStreamPaused = true
-        _isStreamPaused.trySend(rawIsStreamPaused)
+        _isStreamPaused.trySend(true)
         livePlayer?.pause()
         vodPlayer?.pause()
     }
