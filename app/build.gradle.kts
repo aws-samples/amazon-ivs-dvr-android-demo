@@ -47,15 +47,15 @@ android {
 
 dependencies {
     // Android
-    implementation("androidx.core:core-ktx:1.10.1")
+    implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.9.0")
     implementation("androidx.constraintlayout:constraintlayout:2.2.0-alpha12")
     implementation("androidx.activity:activity-ktx:1.7.2")
 
     // Navigation
-    implementation("androidx.navigation:navigation-fragment-ktx:2.7.1")
-    implementation("androidx.navigation:navigation-ui-ktx:2.7.1")
+    implementation("androidx.navigation:navigation-fragment-ktx:2.7.3")
+    implementation("androidx.navigation:navigation-ui-ktx:2.7.3")
 
     // Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
@@ -80,5 +80,5 @@ dependencies {
     implementation("androidx.datastore:datastore:1.0.0")
 
     // Amazon IVS
-    implementation("com.amazonaws:ivs-player:1.21.0")
+    implementation("com.amazonaws:ivs-player:1.22.0")
 }
