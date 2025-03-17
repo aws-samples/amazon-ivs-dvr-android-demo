@@ -12,26 +12,27 @@ import android.widget.FrameLayout
 import android.widget.SeekBar
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.doOnLayout
+import androidx.core.view.isGone
+import androidx.core.view.isInvisible
+import androidx.core.view.isVisible
 import com.amazon.ivs.livetovod.models.SizeModel
 import com.amazon.ivs.livetovod.ui.SEEKBAR_MAX_PROGRESS
 import com.google.android.material.snackbar.Snackbar
+import java.util.Locale
 import kotlin.math.roundToInt
 
 const val ALPHA_VISIBLE = 1F
 const val ALPHA_GONE = 0F
 
-fun View.animateVisibility(isVisible: Boolean) {
-    if ((visibility == View.VISIBLE && isVisible)
-        || (visibility == View.GONE && !isVisible)
-        || (visibility == View.INVISIBLE && !isVisible)
-    ) return
+fun View.animateVisibility(visible: Boolean) {
+    if ((isVisible && visible) || (isGone && !visible) || (isInvisible && !visible)) return
     setVisible(true)
-    alpha = if (isVisible) ALPHA_GONE else ALPHA_VISIBLE
-    animate().setDuration(250L).alpha(if (isVisible) ALPHA_VISIBLE else ALPHA_GONE)
+    alpha = if (visible) ALPHA_GONE else ALPHA_VISIBLE
+    animate().setDuration(250L).alpha(if (visible) ALPHA_VISIBLE else ALPHA_GONE)
         .setListener(object : AnimatorListenerAdapter() {
             override fun onAnimationEnd(animation: Animator) {
                 super.onAnimationEnd(animation)
-                setVisible(isVisible, View.INVISIBLE)
+                setVisible(visible, View.INVISIBLE)
             }
         }).start()
 }
@@ -140,13 +141,13 @@ fun Long.toFormattedTime(): String {
         this in hour until tenHours -> {
             val hours: Long = this / (1000 * 60 * 60)
             val leftover = this - hours * 1000 * 60 * 60
-            stringBuffer.append(String.format("%01d", hours)).append(":")
+            stringBuffer.append(formatLocalized("%01d", hours)).append(":")
             stringBuffer.append(leftover.getMinutesAndSeconds())
         }
         this >= tenHours -> {
             val hours: Long = this / (1000 * 60 * 60)
             val leftover = this - hours * 1000 * 60 * 60
-            stringBuffer.append(String.format("%02d", hours)).append(":")
+            stringBuffer.append(formatLocalized("%02d", hours)).append(":")
             stringBuffer.append(leftover.getMinutesAndSeconds())
         }
     }
@@ -157,8 +158,8 @@ fun Long.getMinutesAndSeconds(minutesFormat: String = "%02d"): String {
     val stringBuffer = StringBuffer()
     val minutes = this / (1000 * 60)
     val seconds = this / 1000 - minutes * 60
-    stringBuffer.append(String.format(minutesFormat, minutes)).append(":")
-    stringBuffer.append(String.format("%02d", seconds))
+    stringBuffer.append(formatLocalized(minutesFormat, minutes)).append(":")
+    stringBuffer.append(formatLocalized("%02d", seconds))
     return stringBuffer.toString()
 }
 
@@ -188,3 +189,5 @@ fun View.setXIfNotOutOfBounds(thumbXCenter: Float, screenWidth: Int, progress: I
         }
     }
 }
+
+private fun formatLocalized(format: String, vararg args: Any) = String.format(Locale.getDefault(), format, args)

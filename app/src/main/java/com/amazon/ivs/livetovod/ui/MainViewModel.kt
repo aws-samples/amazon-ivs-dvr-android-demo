@@ -1,8 +1,8 @@
 package com.amazon.ivs.livetovod.ui
 
-import android.net.Uri
 import android.view.Surface
 import android.view.TextureView
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import com.amazon.ivs.livetovod.BuildConfig
 import com.amazon.ivs.livetovod.common.countDownTimer
@@ -175,7 +175,7 @@ class MainViewModel @Inject constructor(private val repository: Repository) : Vi
             return
         }
         _onStreamLoading.trySend(true)
-        livePlayer = MediaPlayer(textureView.context)
+        livePlayer = MediaPlayer.Builder(textureView.context).build()
         livePlayerListener = initPlayer(
             livePlayer!!,
             textureView,
@@ -199,7 +199,7 @@ class MainViewModel @Inject constructor(private val repository: Repository) : Vi
         _onStreamLoading.trySend(true)
 
         Timber.d("Initializing VOD player")
-        vodPlayer = MediaPlayer(textureView.context)
+        vodPlayer = MediaPlayer.Builder(textureView.context).build()
         vodPlayerListener = initPlayer(
             vodPlayer!!,
             textureView,
@@ -270,7 +270,7 @@ class MainViewModel @Inject constructor(private val repository: Repository) : Vi
             }
         )
         player.setSurface(Surface(textureView.surfaceTexture))
-        player.load(Uri.parse(uri))
+        player.load(uri.toUri())
         return listener
     }
 
