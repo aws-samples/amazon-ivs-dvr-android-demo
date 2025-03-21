@@ -190,4 +190,4 @@ fun View.setXIfNotOutOfBounds(thumbXCenter: Float, screenWidth: Int, progress: I
     }
 }
 
-private fun formatLocalized(format: String, vararg args: Any) = String.format(Locale.getDefault(), format, args)
+private fun formatLocalized(format: String, vararg args: Any) = String.format(Locale.getDefault(), format, *args)
