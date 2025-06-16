@@ -18,7 +18,7 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        buildConfigField("String", "STREAM_VOD_URL", "\"https://d328da4i6b8le0.cloudfront.net\"")
+        buildConfigField("String", "STREAM_VOD_URL", "\"https://d37tghjo9jkp9g.cloudfront.net\"")
     }
 
     buildTypes {
