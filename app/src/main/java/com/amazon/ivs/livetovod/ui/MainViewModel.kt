@@ -88,8 +88,14 @@ class MainViewModel @Inject constructor(private val repository: Repository) : Vi
                 }
                 RequestStatus.SUCCESS -> {
                     val metaData = response.data as MetadataResponse
-                    initLivePlayer(liveTexture, metaData.livePlaybackUrl)
-                    initVodPlayer(vodTexture, metaData.masterKey)
+                    initLivePlayer(
+                        textureView = liveTexture,
+                        liveUrl = metaData.livePlaybackUrl
+                    )
+                    initVodPlayer(
+                        textureView = vodTexture,
+                        masterKey = metaData.masterKey
+                    )
                 }
             }
         }
@@ -270,6 +276,7 @@ class MainViewModel @Inject constructor(private val repository: Repository) : Vi
             }
         )
         player.setSurface(Surface(textureView.surfaceTexture))
+        Timber.d("Playing video at: $uri")
         player.load(uri.toUri())
         return listener
     }

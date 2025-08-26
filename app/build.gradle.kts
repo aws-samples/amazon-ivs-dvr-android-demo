@@ -9,16 +9,16 @@ plugins {
 
 android {
     namespace = "com.amazon.ivs.livetovod"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.amazon.ivs.livetovod"
         minSdk = 23
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
-        buildConfigField("String", "STREAM_VOD_URL", "\"https://d328da4i6b8le0.cloudfront.net\"")
+        buildConfigField("String", "STREAM_VOD_URL", "\"https://d37tghjo9jkp9g.cloudfront.net\"")
     }
 
     buildTypes {
